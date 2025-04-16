@@ -9,11 +9,24 @@ from urls import Urls
 
 class TestCreateOrder:
 
-    @pytest.mark.parametrize('order_data', [{"color": ["BLACK"]}, {"color": ["GREY"]}, {"color": [""]}, {"color": ["BLACK", "GREY"]}])
+    @pytest.mark.parametrize('order_data',
+                             [{"color": ["BLACK"]},
+                              {"color": ["GREY"]},
+                              {"color": [""]},
+                              {"color": ["BLACK", "GREY"]}])
     @allure.title('Создание заказа')
     def test_create_order(self, order_data):
-        Orders.data_order.update(order_data)
-        order_data = json.dumps(Orders.data_order)
+        with allure.step('Обновление данных заказа'):
+            Orders.data_order.update(order_data)
+
+        with allure.step('Подготовка данных для запроса'):
+            order_data_json = json.dumps(Orders.data_order)
+
         headers = {'Content-Type': 'application/json'}
-        response = requests.post(f'{Urls.URL}{Handle.CREATE_ORDER}', data=order_data, headers=headers)
-        assert response.status_code == 201 and 'track' in response.text
+
+        with allure.step('Отправка POST-запроса для создания заказа'):
+            response = requests.post(f'{Urls.URL}{Handle.CREATE_ORDER}', data=order_data_json, headers=headers)
+
+        with allure.step('Проверка ответа на создание заказа'):
+            assert response.status_code == 201, f'Ожидался статус 201, получен {response.status_code}'
+            assert 'track' in response.text, 'Отсутствует ожидаемый ключ "track" в ответе'
